@@ -1,0 +1,1 @@
+Functions: HTTP/1.1 request parsing and forwarding; Caching the results of GET requests (reduces duplicate requests, improves speed); Multithreading supports multiple concurrent requests; Support images, HTML, CSS, JS, JSON and other content; Support Connection: close header, automatic connection management; Error handling (405 Method Not Allowed, 502 Bad Gateway)
