@@ -197,7 +197,7 @@ while True:
 
 
 
-# 处理缓存命中情况
+#Handle cache hits
 try:
     cacheLocation = './' + hostname + resource
     if cacheLocation.endswith('/'):
@@ -207,25 +207,24 @@ try:
 
     fileExists = os.path.isfile(cacheLocation)
     
-    # 如果文件存在于缓存中，则返回缓存数据
+    # If the file exists in the cache, the cached data is returned
     if fileExists:
         with open(cacheLocation, 'rb') as cacheFile:
             cacheData = cacheFile.read()
         print('Cache hit! Loading from cache file: ' + cacheLocation)
-        clientSocket.sendall(cacheData)  # 将缓存数据发送回客户端
-        print('Sent to the client:')
-        print('> ' + cacheData.decode('utf-8'))
+        clientSocket.sendall(cacheData)  # Sends cached data back to the client
+        print('Sent to the client:')        print('> ' + cacheData.decode('utf-8'))
     else:
         print('Cache miss. Fetching from origin server.')
-        # 如果缓存未命中，继续处理后续逻辑（从源服务器获取资源）
+        # If the cache misses, proceed with subsequent logic (fetch resources from the source server)
 try:
     originServerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     address = socket.gethostbyname(hostname)
-    originServerSocket.connect((address, 80))  # 连接到原始服务器
+    originServerSocket.connect((address, 80))  # Connect to the origin server
 
-    # 创建原始服务器请求头
+    # Create the origin server request header
     originServerRequest = f"GET {resource} HTTP/1.1\r\nHost: {hostname}\r\nConnection: close\r\n\r\n"
-    originServerSocket.sendall(originServerRequest.encode())  # 发送请求
+    originServerSocket.sendall(originServerRequest.encode())  # Send Request 
 
     response = b""
     while True:
@@ -234,10 +233,10 @@ try:
             break
         response += data
 
-    # 处理响应并返回给客户端
+    # The response is processed and returned to the client
     clientSocket.sendall(response)
     
-    # 缓存响应
+    # caching response
     cacheDir, file = os.path.split(cacheLocation)
     if not os.path.exists(cacheDir):
         os.makedirs(cacheDir)
@@ -268,7 +267,7 @@ from datetime import datetime, timedelta
 
 BUFFER_SIZE = 1000000
 
-# 设置代理服务器的IP和端口
+# Set the IP address and port number of the proxy server
 parser = argparse.ArgumentParser()
 parser.add_argument('hostname', help='the IP Address of Proxy Server')
 parser.add_argument('port', help='the port number of the proxy server')
@@ -289,16 +288,16 @@ while True:
     clientSocket, addr = serverSocket.accept()
     print(f"Connection received from {addr}")
 
-    # 获取客户端请求
+    # Get the client request
     message_bytes = clientSocket.recv(BUFFER_SIZE)
     message = message_bytes.decode('utf-8')
     print(f"Received request:\n< {message}")
 
-    # 解析请求行
+    #Parse request line
     requestParts = message.split()
     method, URI, version = requestParts[0], requestParts[1], requestParts[2]
     
-    # 从URI提取主机名和资源
+    # Extract host names and resources from URIs
     URI = re.sub('^(/?)http(s?)://', '', URI, count=1)
     URI = URI.replace('/..', '')
     resourceParts = URI.split('/', 1)
@@ -307,7 +306,7 @@ while True:
 
     print(f"Requested Resource: {resource}")
 
-    # 缓存处理
+    # Cache Handler Function
     cacheLocation = f'./{hostname}{resource}'
     if cacheLocation.endswith('/'):
         cacheLocation += 'default'
@@ -319,7 +318,7 @@ while True:
             clientSocket.sendall(cacheData)
             print(f"Cache hit: Sending cached data from {cacheLocation}")
         else:
-            # 向原始服务器发送请求
+            # Send a request to the origin server
             originServerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             originServerSocket.connect((socket.gethostbyname(hostname), 80))
             
@@ -333,7 +332,7 @@ while True:
                     break
                 response += data
 
-            # 将响应发送给客户端并缓存
+            # The response is sent to the client and cached
             clientSocket.sendall(response)
             with open(cacheLocation, 'wb') as cacheFile:
                 cacheFile.write(response)
@@ -351,3 +350,21 @@ $ curl -iS "http://localhost:8080/http://httpbin.org/redirect-to?url=http://http
 $ curl -iS "http://localhost:8080/http://httpbin.org/redirect-to?url=http://http.badssl.com&status_code=302"
 $ telnet localhost 8080
 GET http://http.badssl.com HTTP/1.1
+
+import socket
+
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+proxyHost = "localhost"  # Change this if needed
+proxyPort = 8080
+
+try:
+    server_socket.bind((proxyHost, proxyPort))
+    print(f"Proxy server is running on {proxyHost}:{proxyPort}")
+except Exception as e:
+    print(f"Failed to bind: {e}")
+    exit(1)
+
+server_socket.listen(5)
+print(f"Listening on {proxyHost}:{proxyPort}")
